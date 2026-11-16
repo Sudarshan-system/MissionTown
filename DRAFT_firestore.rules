@@ -1,0 +1,603 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Pillar 0: Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Pillar 1: Global Safety Primitives
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 80 && id.matches('^[a-zA-Z0-9_-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    function isValidDepartmentId(deptId) {
+      return deptId is string && deptId in ['the-boss', 'content-studio', 'growth', 'sales-community'];
+    }
+
+    function isValidProviderId(providerId) {
+      return providerId is string && providerId in ['ollama_local', 'gemini_free_tier', 'deterministic_local'];
+    }
+
+    function isValidTaskType(taskType) {
+      return taskType is string && taskType in [
+        'clip_brief_generation',
+        'transcript_indexing',
+        'video_reframe_spec',
+        'caption_styling_spec',
+        'quality_gate_audit',
+        'growth_retention_plan',
+        'creator_outreach_draft'
+      ];
+    }
+
+    // WorkspaceGoal Validator
+    function isValidWorkspaceGoal(data, userId, workspaceId) {
+      let keys = [
+        'id',
+        'ownerUid',
+        'schemaVersion',
+        'title',
+        'metricLabel',
+        'currentValue',
+        'targetValue',
+        'unit',
+        'currentDay',
+        'totalDays',
+        'deadlineLabel',
+        'countdownDisplay',
+        'isSampleData',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(keys) && data.keys().hasOnly(keys)
+        && data.id == workspaceId
+        && data.ownerUid == userId
+        && data.schemaVersion == 1
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 240
+        && data.metricLabel is string && data.metricLabel.size() >= 1 && data.metricLabel.size() <= 60
+        && data.currentValue is number && data.currentValue >= 0 && data.currentValue <= 1000000
+        && data.targetValue is number && data.targetValue >= 1 && data.targetValue <= 1000000
+        && data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 80
+        && data.currentDay is int && data.currentDay >= 0 && data.currentDay <= 3650
+        && data.totalDays is int && data.totalDays >= 1 && data.totalDays <= 3650
+        && data.deadlineLabel is string && data.deadlineLabel.size() >= 1 && data.deadlineLabel.size() <= 80
+        && data.countdownDisplay is string && data.countdownDisplay.size() >= 1 && data.countdownDisplay.size() <= 60
+        && data.isSampleData is bool;
+    }
+
+    // DepartmentRecord Validator
+    function isValidDepartmentRecord(data, userId, departmentId) {
+      let keys = [
+        'id',
+        'ownerUid',
+        'schemaVersion',
+        'name',
+        'shortLabel',
+        'description',
+        'accentColor',
+        'badgeBg',
+        'badgeBorder',
+        'badgeText',
+        'islandX',
+        'islandY',
+        'futureEngineHook',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(keys) && data.keys().hasOnly(keys)
+        && data.id == departmentId
+        && isValidDepartmentId(data.id)
+        && data.ownerUid == userId
+        && data.schemaVersion == 1
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 80
+        && data.shortLabel is string && data.shortLabel.size() >= 1 && data.shortLabel.size() <= 60
+        && data.description is string && data.description.size() >= 1 && data.description.size() <= 500
+        && data.accentColor is string && data.accentColor.size() >= 4 && data.accentColor.size() <= 20
+        && data.badgeBg is string && data.badgeBg.size() >= 4 && data.badgeBg.size() <= 20
+        && data.badgeBorder is string && data.badgeBorder.size() >= 4 && data.badgeBorder.size() <= 20
+        && data.badgeText is string && data.badgeText.size() >= 4 && data.badgeText.size() <= 20
+        && data.islandX is number && data.islandX >= 0 && data.islandX <= 1000
+        && data.islandY is number && data.islandY >= 0 && data.islandY <= 1000
+        && data.futureEngineHook is string && data.futureEngineHook.size() >= 1 && data.futureEngineHook.size() <= 200;
+    }
+
+    // AgentRecord Validator
+    function isValidAgentRecord(data, userId, agentId) {
+      let keys = [
+        'id',
+        'ownerUid',
+        'schemaVersion',
+        'name',
+        'role',
+        'departmentId',
+        'status',
+        'badgeColor',
+        'progressPercent',
+        'homeX',
+        'homeY',
+        'destinationLabel',
+        'speedPxPerSec',
+        'currentTaskId',
+        'executionJobId',
+        'specialty',
+        'isSampleData',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(keys) && data.keys().hasOnly(keys)
+        && data.id == agentId
+        && data.ownerUid == userId
+        && data.schemaVersion == 1
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 80
+        && data.role is string && data.role.size() >= 1 && data.role.size() <= 120
+        && isValidDepartmentId(data.departmentId)
+        && data.status is string && data.status in ['working', 'reviewing', 'queued', 'idle']
+        && data.badgeColor is string && data.badgeColor in ['green', 'blue', 'purple', 'orange', 'teal', 'rose']
+        && data.progressPercent is number && data.progressPercent >= 0 && data.progressPercent <= 100
+        && data.homeX is number && data.homeX >= 0 && data.homeX <= 1000
+        && data.homeY is number && data.homeY >= 0 && data.homeY <= 1000
+        && data.destinationLabel is string && data.destinationLabel.size() >= 1 && data.destinationLabel.size() <= 120
+        && data.speedPxPerSec is number && data.speedPxPerSec >= 10 && data.speedPxPerSec <= 300
+        && data.currentTaskId is string && data.currentTaskId.size() >= 1 && data.currentTaskId.size() <= 80
+        && data.executionJobId is string && data.executionJobId.size() >= 1 && data.executionJobId.size() <= 80
+        && data.specialty is string && data.specialty.size() >= 1 && data.specialty.size() <= 300
+        && data.isSampleData is bool;
+    }
+
+    // TaskRecord Validator
+    function isValidTaskRecord(data, userId, taskId) {
+      let keys = [
+        'id',
+        'ownerUid',
+        'schemaVersion',
+        'title',
+        'description',
+        'departmentId',
+        'assignedAgentId',
+        'status',
+        'priority',
+        'progressPercent',
+        'sampleOutputSummary',
+        'isSampleData',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(keys) && data.keys().hasOnly(keys)
+        && data.id == taskId
+        && data.ownerUid == userId
+        && data.schemaVersion == 1
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 240
+        && data.description is string && data.description.size() >= 1 && data.description.size() <= 500
+        && isValidDepartmentId(data.departmentId)
+        && data.assignedAgentId is string && data.assignedAgentId.size() >= 1 && data.assignedAgentId.size() <= 80
+        && data.status is string && data.status in ['in_progress', 'completed_sample', 'queued', 'awaiting_gate']
+        && data.priority is string && data.priority in ['high', 'medium', 'low']
+        && data.progressPercent is number && data.progressPercent >= 0 && data.progressPercent <= 100
+        && data.sampleOutputSummary is string && data.sampleOutputSummary.size() >= 1 && data.sampleOutputSummary.size() <= 400
+        && data.isSampleData is bool;
+    }
+
+    // ActivityEventRecord Validator
+    function isValidActivityRecord(data, userId, activityId) {
+      let keys = [
+        'id',
+        'ownerUid',
+        'schemaVersion',
+        'fromAgentName',
+        'toAgentName',
+        'fromAgentId',
+        'toAgentId',
+        'departmentId',
+        'destinationLabel',
+        'message',
+        'timestampLabel',
+        'eventTimestampMs',
+        'status',
+        'eventType',
+        'isSampleData',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(keys) && data.keys().hasOnly(keys)
+        && data.id == activityId
+        && data.ownerUid == userId
+        && data.schemaVersion == 1
+        && data.fromAgentName is string && data.fromAgentName.size() >= 1 && data.fromAgentName.size() <= 80
+        && data.toAgentName is string && data.toAgentName.size() >= 0 && data.toAgentName.size() <= 80
+        && data.fromAgentId is string && data.fromAgentId.size() >= 1 && data.fromAgentId.size() <= 80
+        && data.toAgentId is string && data.toAgentId.size() >= 0 && data.toAgentId.size() <= 80
+        && isValidDepartmentId(data.departmentId)
+        && data.destinationLabel is string && data.destinationLabel.size() >= 0 && data.destinationLabel.size() <= 120
+        && data.message is string && data.message.size() >= 1 && data.message.size() <= 320
+        && data.timestampLabel is string && data.timestampLabel.size() >= 1 && data.timestampLabel.size() <= 80
+        && data.eventTimestampMs is number && data.eventTimestampMs >= 0 && data.eventTimestampMs <= 9999999999999
+        && data.status is string && data.status in ['travelling', 'delivered', 'completed']
+        && data.eventType is string && data.eventType in ['handoff', 'quality_gate', 'milestone', 'clip_spec']
+        && data.isSampleData is bool;
+    }
+
+    // UserPreferencesRecord Validator
+    function isValidPreferenceRecord(data, userId, preferenceId) {
+      let keys = [
+        'id',
+        'ownerUid',
+        'schemaVersion',
+        'defaultDepartmentFilter',
+        'selectedAgentId',
+        'simulationAutoplay',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(keys) && data.keys().hasOnly(keys)
+        && data.id == preferenceId
+        && data.ownerUid == userId
+        && data.schemaVersion == 1
+        && data.defaultDepartmentFilter is string
+        && data.defaultDepartmentFilter in ['all', 'the-boss', 'content-studio', 'growth', 'sales-community']
+        && data.selectedAgentId is string && data.selectedAgentId.size() >= 0 && data.selectedAgentId.size() <= 80
+        && data.simulationAutoplay is bool;
+    }
+
+    // Phase 4: DelegationPlanRecord Validator
+    function isValidTaskPlanRecord(data, userId, planId) {
+      let keys = [
+        'id',
+        'ownerUid',
+        'schemaVersion',
+        'goalId',
+        'goalTitle',
+        'providerId',
+        'status',
+        'autoRunApprovedTypesOnly',
+        'tasksJson',
+        'taskCount',
+        'supportedTaskCount',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(keys) && data.keys().hasOnly(keys)
+        && data.id == planId
+        && data.ownerUid == userId
+        && data.schemaVersion == 1
+        && data.goalId is string && data.goalId.size() >= 1 && data.goalId.size() <= 80
+        && data.goalTitle is string && data.goalTitle.size() >= 1 && data.goalTitle.size() <= 240
+        && isValidProviderId(data.providerId)
+        && data.status is string && data.status in ['waiting_for_approval', 'approved', 'executing', 'completed', 'rejected']
+        && data.autoRunApprovedTypesOnly is bool
+        && data.tasksJson is string && data.tasksJson.size() >= 2 && data.tasksJson.size() <= 8000
+        && data.taskCount is int && data.taskCount >= 1 && data.taskCount <= 8
+        && data.supportedTaskCount is int && data.supportedTaskCount >= 0 && data.supportedTaskCount <= 8;
+    }
+
+    // Phase 4: ExecutionJobRecord Validator
+    function isValidExecutionJobRecord(data, userId, jobId) {
+      let keys = [
+        'id',
+        'ownerUid',
+        'schemaVersion',
+        'planId',
+        'taskId',
+        'taskTitle',
+        'taskType',
+        'assignedAgentId',
+        'assignedAgentName',
+        'providerId',
+        'status',
+        'permissionConfirmed',
+        'retryCount',
+        'maxRetries',
+        'sourceTranscriptExcerpt',
+        'outputSummary',
+        'errorMessage',
+        'isSampleData',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(keys) && data.keys().hasOnly(keys)
+        && data.id == jobId
+        && data.ownerUid == userId
+        && data.schemaVersion == 1
+        && data.planId is string && data.planId.size() >= 1 && data.planId.size() <= 80
+        && data.taskId is string && data.taskId.size() >= 1 && data.taskId.size() <= 80
+        && data.taskTitle is string && data.taskTitle.size() >= 1 && data.taskTitle.size() <= 200
+        && isValidTaskType(data.taskType)
+        && data.assignedAgentId is string && data.assignedAgentId.size() >= 1 && data.assignedAgentId.size() <= 80
+        && data.assignedAgentName is string && data.assignedAgentName.size() >= 1 && data.assignedAgentName.size() <= 80
+        && isValidProviderId(data.providerId)
+        && data.status is string && data.status in ['waiting_for_approval', 'queued', 'running', 'completed', 'failed', 'cancelled', 'unsupported_worker']
+        && data.permissionConfirmed is bool
+        && data.retryCount is int && data.retryCount >= 0 && data.retryCount <= 5
+        && data.maxRetries is int && data.maxRetries >= 1 && data.maxRetries <= 5
+        && data.sourceTranscriptExcerpt is string && data.sourceTranscriptExcerpt.size() >= 0 && data.sourceTranscriptExcerpt.size() <= 300
+        && data.outputSummary is string && data.outputSummary.size() >= 0 && data.outputSummary.size() <= 400
+        && data.errorMessage is string && data.errorMessage.size() >= 0 && data.errorMessage.size() <= 320
+        && data.isSampleData is bool;
+    }
+
+    // Phase 4: ClipBriefRecord Validator
+    function isValidClipBriefRecord(data, userId, briefId) {
+      let keys = [
+        'id',
+        'ownerUid',
+        'schemaVersion',
+        'jobId',
+        'planId',
+        'taskId',
+        'agentId',
+        'clipTitle',
+        'hookLine',
+        'segmentTimestamp',
+        'segmentQuote',
+        'estimatedDurationSec',
+        'aspectRatio',
+        'captionDraft',
+        'retentionRationale',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(keys) && data.keys().hasOnly(keys)
+        && data.id == briefId
+        && data.ownerUid == userId
+        && data.schemaVersion == 1
+        && data.jobId is string && data.jobId.size() >= 1 && data.jobId.size() <= 80
+        && data.planId is string && data.planId.size() >= 1 && data.planId.size() <= 80
+        && data.taskId is string && data.taskId.size() >= 1 && data.taskId.size() <= 80
+        && data.agentId is string && data.agentId.size() >= 1 && data.agentId.size() <= 80
+        && data.clipTitle is string && data.clipTitle.size() >= 1 && data.clipTitle.size() <= 140
+        && data.hookLine is string && data.hookLine.size() >= 1 && data.hookLine.size() <= 220
+        && data.segmentTimestamp is string && data.segmentTimestamp.size() >= 1 && data.segmentTimestamp.size() <= 40
+        && data.segmentQuote is string && data.segmentQuote.size() >= 1 && data.segmentQuote.size() <= 400
+        && data.estimatedDurationSec is int && data.estimatedDurationSec >= 12 && data.estimatedDurationSec <= 90
+        && data.aspectRatio is string && data.aspectRatio in ['9:16', '1:1', '16:9']
+        && data.captionDraft is string && data.captionDraft.size() >= 1 && data.captionDraft.size() <= 320
+        && data.retentionRationale is string && data.retentionRationale.size() >= 1 && data.retentionRationale.size() <= 320;
+    }
+
+    match /users/{userId} {
+      // 1. Workspaces (Primary Goal)
+      match /workspaces/{workspaceId} {
+        allow get, list: if isOwner(userId) && isValidId(workspaceId);
+        allow create: if isOwner(userId)
+          && isValidId(workspaceId)
+          && isValidWorkspaceGoal(request.resource.data, userId, workspaceId)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(workspaceId)
+          && isValidWorkspaceGoal(request.resource.data, userId, workspaceId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'title',
+            'metricLabel',
+            'currentValue',
+            'targetValue',
+            'unit',
+            'currentDay',
+            'totalDays',
+            'deadlineLabel',
+            'countdownDisplay',
+            'isSampleData',
+            'updatedAt'
+          ])
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(workspaceId);
+      }
+
+      // 2. Departments
+      match /departments/{departmentId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(departmentId)
+          && isValidDepartmentRecord(request.resource.data, userId, departmentId)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(departmentId)
+          && isValidDepartmentRecord(request.resource.data, userId, departmentId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name',
+            'shortLabel',
+            'description',
+            'accentColor',
+            'badgeBg',
+            'badgeBorder',
+            'badgeText',
+            'islandX',
+            'islandY',
+            'futureEngineHook',
+            'updatedAt'
+          ])
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(departmentId);
+      }
+
+      // 3. Agents
+      match /agents/{agentId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(agentId)
+          && isValidAgentRecord(request.resource.data, userId, agentId)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(agentId)
+          && isValidAgentRecord(request.resource.data, userId, agentId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name',
+            'role',
+            'departmentId',
+            'status',
+            'badgeColor',
+            'progressPercent',
+            'homeX',
+            'homeY',
+            'destinationLabel',
+            'speedPxPerSec',
+            'currentTaskId',
+            'executionJobId',
+            'specialty',
+            'isSampleData',
+            'updatedAt'
+          ])
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(agentId);
+      }
+
+      // 4. Tasks
+      match /tasks/{taskId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(taskId)
+          && isValidTaskRecord(request.resource.data, userId, taskId)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(taskId)
+          && isValidTaskRecord(request.resource.data, userId, taskId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'title',
+            'description',
+            'departmentId',
+            'assignedAgentId',
+            'status',
+            'priority',
+            'progressPercent',
+            'sampleOutputSummary',
+            'isSampleData',
+            'updatedAt'
+          ])
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(taskId);
+      }
+
+      // 5. Activities
+      match /activities/{activityId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(activityId)
+          && isValidActivityRecord(request.resource.data, userId, activityId)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(activityId)
+          && isValidActivityRecord(request.resource.data, userId, activityId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status',
+            'timestampLabel',
+            'message',
+            'updatedAt'
+          ])
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(activityId);
+      }
+
+      // 6. User Preferences
+      match /preferences/{preferenceId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(preferenceId)
+          && isValidPreferenceRecord(request.resource.data, userId, preferenceId)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(preferenceId)
+          && isValidPreferenceRecord(request.resource.data, userId, preferenceId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'defaultDepartmentFilter',
+            'selectedAgentId',
+            'simulationAutoplay',
+            'updatedAt'
+          ])
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(preferenceId);
+      }
+
+      // 7. Phase 4: Task Delegation Plans
+      match /taskPlans/{planId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(planId)
+          && isValidTaskPlanRecord(request.resource.data, userId, planId)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(planId)
+          && isValidTaskPlanRecord(request.resource.data, userId, planId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'goalTitle',
+            'providerId',
+            'status',
+            'autoRunApprovedTypesOnly',
+            'tasksJson',
+            'taskCount',
+            'supportedTaskCount',
+            'updatedAt'
+          ])
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(planId);
+      }
+
+      // 8. Phase 4: Execution Jobs
+      match /executionJobs/{jobId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(jobId)
+          && isValidExecutionJobRecord(request.resource.data, userId, jobId)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(jobId)
+          && isValidExecutionJobRecord(request.resource.data, userId, jobId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status',
+            'retryCount',
+            'outputSummary',
+            'errorMessage',
+            'updatedAt'
+          ])
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(jobId);
+      }
+
+      // 9. Phase 4: Candidate Clip Briefs
+      match /clipBriefs/{briefId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(briefId)
+          && isValidClipBriefRecord(request.resource.data, userId, briefId)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(briefId)
+          && isValidClipBriefRecord(request.resource.data, userId, briefId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'clipTitle',
+            'hookLine',
+            'captionDraft',
+            'retentionRationale',
+            'updatedAt'
+          ])
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(userId) && isValidId(briefId);
+      }
+    }
+  }
+}

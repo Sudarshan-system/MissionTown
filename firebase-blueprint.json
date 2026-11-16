@@ -1,0 +1,399 @@
+{
+  "entities": {
+    "WorkspaceGoal": {
+      "title": "WorkspaceGoal",
+      "description": "Persistent company workspace metadata and primary mission goal for an authenticated user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Stable document ID ('main')" },
+        "ownerUid": { "type": "string", "description": "UID of the workspace owner" },
+        "schemaVersion": { "type": "integer", "description": "Schema version number (1)" },
+        "title": { "type": "string", "description": "Mission goal statement" },
+        "metricLabel": { "type": "string", "description": "Progress ratio display string" },
+        "currentValue": { "type": "number", "description": "Current numeric progress toward goal" },
+        "targetValue": { "type": "number", "description": "Target numeric value for goal" },
+        "unit": { "type": "string", "description": "Metric unit label" },
+        "currentDay": { "type": "integer", "description": "Current sprint day" },
+        "totalDays": { "type": "integer", "description": "Total sprint days" },
+        "deadlineLabel": { "type": "string", "description": "Human-readable sprint day status" },
+        "countdownDisplay": { "type": "string", "description": "Formatted countdown display" },
+        "isSampleData": { "type": "boolean", "description": "True when representing sample/simulated progress" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp when created" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp when last updated" }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "schemaVersion",
+        "title",
+        "metricLabel",
+        "currentValue",
+        "targetValue",
+        "unit",
+        "currentDay",
+        "totalDays",
+        "deadlineLabel",
+        "countdownDisplay",
+        "isSampleData",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DepartmentRecord": {
+      "title": "DepartmentRecord",
+      "description": "Persistent department configuration within a user's MissionTown workspace.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "enum": ["the-boss", "content-studio", "growth", "sales-community"] },
+        "ownerUid": { "type": "string" },
+        "schemaVersion": { "type": "integer" },
+        "name": { "type": "string" },
+        "shortLabel": { "type": "string" },
+        "description": { "type": "string" },
+        "accentColor": { "type": "string" },
+        "badgeBg": { "type": "string" },
+        "badgeBorder": { "type": "string" },
+        "badgeText": { "type": "string" },
+        "islandX": { "type": "number" },
+        "islandY": { "type": "number" },
+        "futureEngineHook": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "schemaVersion",
+        "name",
+        "shortLabel",
+        "description",
+        "accentColor",
+        "badgeBg",
+        "badgeBorder",
+        "badgeText",
+        "islandX",
+        "islandY",
+        "futureEngineHook",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AgentRecord": {
+      "title": "AgentRecord",
+      "description": "Persistent AI agent role, home coordinates, status, and current task link.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "schemaVersion": { "type": "integer" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "departmentId": { "type": "string", "enum": ["the-boss", "content-studio", "growth", "sales-community"] },
+        "status": { "type": "string", "enum": ["working", "reviewing", "queued", "idle"] },
+        "badgeColor": { "type": "string", "enum": ["green", "blue", "purple", "orange", "teal", "rose"] },
+        "progressPercent": { "type": "number" },
+        "homeX": { "type": "number" },
+        "homeY": { "type": "number" },
+        "destinationLabel": { "type": "string" },
+        "speedPxPerSec": { "type": "number" },
+        "currentTaskId": { "type": "string" },
+        "executionJobId": { "type": "string" },
+        "specialty": { "type": "string" },
+        "isSampleData": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "schemaVersion",
+        "name",
+        "role",
+        "departmentId",
+        "status",
+        "badgeColor",
+        "progressPercent",
+        "homeX",
+        "homeY",
+        "destinationLabel",
+        "speedPxPerSec",
+        "currentTaskId",
+        "executionJobId",
+        "specialty",
+        "isSampleData",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TaskRecord": {
+      "title": "TaskRecord",
+      "description": "Persistent task assignment and status for an agent.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "schemaVersion": { "type": "integer" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "departmentId": { "type": "string", "enum": ["the-boss", "content-studio", "growth", "sales-community"] },
+        "assignedAgentId": { "type": "string" },
+        "status": { "type": "string", "enum": ["in_progress", "completed_sample", "queued", "awaiting_gate"] },
+        "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+        "progressPercent": { "type": "number" },
+        "sampleOutputSummary": { "type": "string" },
+        "isSampleData": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "schemaVersion",
+        "title",
+        "description",
+        "departmentId",
+        "assignedAgentId",
+        "status",
+        "priority",
+        "progressPercent",
+        "sampleOutputSummary",
+        "isSampleData",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ActivityEventRecord": {
+      "title": "ActivityEventRecord",
+      "description": "Durable company activity event (e.g., user-assigned task or milestone).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "schemaVersion": { "type": "integer" },
+        "fromAgentName": { "type": "string" },
+        "toAgentName": { "type": "string" },
+        "fromAgentId": { "type": "string" },
+        "toAgentId": { "type": "string" },
+        "departmentId": { "type": "string", "enum": ["the-boss", "content-studio", "growth", "sales-community"] },
+        "destinationLabel": { "type": "string" },
+        "message": { "type": "string" },
+        "timestampLabel": { "type": "string" },
+        "eventTimestampMs": { "type": "number" },
+        "status": { "type": "string", "enum": ["travelling", "delivered", "completed"] },
+        "eventType": { "type": "string", "enum": ["handoff", "quality_gate", "milestone", "clip_spec"] },
+        "isSampleData": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "schemaVersion",
+        "fromAgentName",
+        "toAgentName",
+        "fromAgentId",
+        "toAgentId",
+        "departmentId",
+        "destinationLabel",
+        "message",
+        "timestampLabel",
+        "eventTimestampMs",
+        "status",
+        "eventType",
+        "isSampleData",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserPreferencesRecord": {
+      "title": "UserPreferencesRecord",
+      "description": "User workspace UI preferences.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "schemaVersion": { "type": "integer" },
+        "defaultDepartmentFilter": { "type": "string", "enum": ["all", "the-boss", "content-studio", "growth", "sales-community"] },
+        "selectedAgentId": { "type": "string" },
+        "simulationAutoplay": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "schemaVersion",
+        "defaultDepartmentFilter",
+        "selectedAgentId",
+        "simulationAutoplay",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DelegationPlanRecord": {
+      "title": "DelegationPlanRecord",
+      "description": "Persistent proposed or approved multi-agent task delegation plan generated by The Boss.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "schemaVersion": { "type": "integer" },
+        "goalId": { "type": "string" },
+        "goalTitle": { "type": "string" },
+        "providerId": { "type": "string", "enum": ["ollama_local", "gemini_free_tier", "deterministic_local"] },
+        "status": { "type": "string", "enum": ["waiting_for_approval", "approved", "executing", "completed", "rejected"] },
+        "autoRunApprovedTypesOnly": { "type": "boolean" },
+        "tasksJson": { "type": "string" },
+        "taskCount": { "type": "integer" },
+        "supportedTaskCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "schemaVersion",
+        "goalId",
+        "goalTitle",
+        "providerId",
+        "status",
+        "autoRunApprovedTypesOnly",
+        "tasksJson",
+        "taskCount",
+        "supportedTaskCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ExecutionJobRecord": {
+      "title": "ExecutionJobRecord",
+      "description": "Persistent AI worker execution job record with approval, permission, and retry state.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "schemaVersion": { "type": "integer" },
+        "planId": { "type": "string" },
+        "taskId": { "type": "string" },
+        "taskTitle": { "type": "string" },
+        "taskType": { "type": "string" },
+        "assignedAgentId": { "type": "string" },
+        "assignedAgentName": { "type": "string" },
+        "providerId": { "type": "string", "enum": ["ollama_local", "gemini_free_tier", "deterministic_local"] },
+        "status": { "type": "string", "enum": ["waiting_for_approval", "queued", "running", "completed", "failed", "cancelled", "unsupported_worker"] },
+        "permissionConfirmed": { "type": "boolean" },
+        "retryCount": { "type": "integer" },
+        "maxRetries": { "type": "integer" },
+        "sourceTranscriptExcerpt": { "type": "string" },
+        "outputSummary": { "type": "string" },
+        "errorMessage": { "type": "string" },
+        "isSampleData": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "schemaVersion",
+        "planId",
+        "taskId",
+        "taskTitle",
+        "taskType",
+        "assignedAgentId",
+        "assignedAgentName",
+        "providerId",
+        "status",
+        "permissionConfirmed",
+        "retryCount",
+        "maxRetries",
+        "sourceTranscriptExcerpt",
+        "outputSummary",
+        "errorMessage",
+        "isSampleData",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ClipBriefRecord": {
+      "title": "ClipBriefRecord",
+      "description": "Validated candidate short-form clip brief generated by the Clip Brief Generator worker.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "schemaVersion": { "type": "integer" },
+        "jobId": { "type": "string" },
+        "planId": { "type": "string" },
+        "taskId": { "type": "string" },
+        "agentId": { "type": "string" },
+        "clipTitle": { "type": "string" },
+        "hookLine": { "type": "string" },
+        "segmentTimestamp": { "type": "string" },
+        "segmentQuote": { "type": "string" },
+        "estimatedDurationSec": { "type": "integer" },
+        "aspectRatio": { "type": "string", "enum": ["9:16", "1:1", "16:9"] },
+        "captionDraft": { "type": "string" },
+        "retentionRationale": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "schemaVersion",
+        "jobId",
+        "planId",
+        "taskId",
+        "agentId",
+        "clipTitle",
+        "hookLine",
+        "segmentTimestamp",
+        "segmentQuote",
+        "estimatedDurationSec",
+        "aspectRatio",
+        "captionDraft",
+        "retentionRationale",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/workspaces/{workspaceId}": {
+      "schema": { "$ref": "#/entities/WorkspaceGoal" },
+      "description": "User-scoped workspace goal documents"
+    },
+    "/users/{userId}/departments/{departmentId}": {
+      "schema": { "$ref": "#/entities/DepartmentRecord" },
+      "description": "User-scoped department configuration documents"
+    },
+    "/users/{userId}/agents/{agentId}": {
+      "schema": { "$ref": "#/entities/AgentRecord" },
+      "description": "User-scoped durable agent configuration documents"
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/TaskRecord" },
+      "description": "User-scoped durable task assignment documents"
+    },
+    "/users/{userId}/activities/{activityId}": {
+      "schema": { "$ref": "#/entities/ActivityEventRecord" },
+      "description": "User-scoped durable activity event documents"
+    },
+    "/users/{userId}/preferences/{preferenceId}": {
+      "schema": { "$ref": "#/entities/UserPreferencesRecord" },
+      "description": "User-scoped workspace preferences documents"
+    },
+    "/users/{userId}/taskPlans/{planId}": {
+      "schema": { "$ref": "#/entities/DelegationPlanRecord" },
+      "description": "User-scoped proposed and approved task delegation plans"
+    },
+    "/users/{userId}/executionJobs/{jobId}": {
+      "schema": { "$ref": "#/entities/ExecutionJobRecord" },
+      "description": "User-scoped AI worker execution jobs"
+    },
+    "/users/{userId}/clipBriefs/{briefId}": {
+      "schema": { "$ref": "#/entities/ClipBriefRecord" },
+      "description": "User-scoped candidate short-form clip briefs"
+    }
+  }
+}

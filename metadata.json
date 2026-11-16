@@ -1,0 +1,6 @@
+{
+  "name": "MissionTown",
+  "description": "Personal AI company command center and interactive miniature island workspace for managing goal-driven AI agent teams.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
